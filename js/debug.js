@@ -1,4 +1,4 @@
-// Debug.js - A simplified version of the game for troubleshooting mobile issues
+// Debug.js - A troubleshooting tool for Critters Quest that allows switching between debug and full game
 
 // Debug information display
 const debugInfo = document.getElementById('debug-info');
@@ -12,6 +12,9 @@ const logInfo = (message) => {
             debugInfo.removeChild(entries[i]);
         }
     }
+    
+    // Auto-scroll to bottom
+    debugInfo.scrollTop = debugInfo.scrollHeight;
 };
 
 // Mobile detection
@@ -30,9 +33,28 @@ document.getElementById('test-character').addEventListener('click', startCharact
 document.getElementById('toggle-debug').addEventListener('click', () => {
     debugInfo.style.display = debugInfo.style.display === 'none' ? 'block' : 'none';
 });
+document.getElementById('toggle-full-game').addEventListener('click', toggleFullGame);
 
 // Store the current game instance
 let currentGame = null;
+let inFullGameMode = false;
+
+// Function to toggle between debug mode and full game
+function toggleFullGame() {
+    if (inFullGameMode) {
+        // Switch back to debug mode
+        inFullGameMode = false;
+        document.getElementById('toggle-full-game').textContent = 'Switch to Full Game';
+        startBasicTest(); // Start with basic test when returning to debug mode
+        logInfo('Switched to debug mode');
+    } else {
+        // Switch to full game mode
+        inFullGameMode = true;
+        document.getElementById('toggle-full-game').textContent = 'Switch to Debug Mode';
+        startFullGame();
+        logInfo('Switched to full game mode');
+    }
+}
 
 // Basic test - minimal Phaser instance
 function startBasicTest() {
@@ -319,6 +341,72 @@ function characterCreate() {
         color: '#ffffff'
     });
     text.setOrigin(0.5, 0.5);
+}
+
+// Start the full game experience (based on the original game.js and StartScene.js)
+function startFullGame() {
+    logInfo('Starting full game experience');
+    if (currentGame) currentGame.destroy(true);
+    
+    // Import the original StartScene to use in our game
+    import('./scenes/StartScene.js')
+        .then((module) => {
+            const StartScene = module.default;
+            
+            const config = {
+                type: Phaser.AUTO,
+                parent: 'game-container',
+                scale: {
+                    mode: Phaser.Scale.FIT,
+                    autoCenter: Phaser.Scale.CENTER_BOTH,
+                    width: 1920,
+                    height: 400,
+                    min: {
+                        width: 800,
+                        height: 200
+                    },
+                    max: {
+                        width: 1920,
+                        height: 800
+                    }
+                },
+                scene: StartScene,
+                backgroundColor: '#000000',
+                // Explicitly enable touch input for mobile
+                input: {
+                    touch: true,
+                    activePointers: 1 // Set to 1 for better mobile performance
+                }
+            };
+            
+            currentGame = new Phaser.Game(config);
+            
+            // Handle responsive font sizing (from original game.js)
+            const baseFontSize = 18;
+            const baseWidth = 1920;
+            
+            currentGame.events.on('resize', (gameSize) => {
+                logInfo(`Game resized to ${gameSize.width}x${gameSize.height}`);
+                // Calculate new font size based on screen width
+                const scaleFactor = Math.min(1, gameSize.width / baseWidth);
+                const newFontSize = Math.max(14, Math.floor(baseFontSize * scaleFactor));
+                
+                // Update font size in the current scene
+                const currentScene = currentGame.scene.getScenes(true)[0];
+                if (currentScene && currentScene.instructionText) {
+                    currentScene.instructionText.setFontSize(newFontSize + 'px');
+                }
+            });
+            
+            logInfo('Full game loaded successfully');
+        })
+        .catch(error => {
+            logInfo(`ERROR loading full game: ${error.message}`);
+            // Fall back to character test if full game fails to load
+            inFullGameMode = false;
+            document.getElementById('toggle-full-game').textContent = 'Switch to Full Game';
+            startCharacterTest();
+        });
 }
 
 // Register for window resize events

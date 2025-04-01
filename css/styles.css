@@ -39,3 +39,65 @@ canvas {
     z-index: 9999;
     margin-top: -70px;
 }
+
+/* Debug styles */
+#debug-info {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    padding: 10px;
+    font-family: monospace;
+    z-index: 10000;
+    max-width: 90%;
+    max-height: 30vh;
+    overflow: auto;
+    font-size: 12px;
+    border-radius: 5px;
+    border: 1px solid #444;
+}
+
+.controls {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    display: flex;
+    flex-direction: column;
+    z-index: 10000;
+}
+
+.controls button {
+    margin: 5px;
+    padding: 10px;
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    border: 1px solid #fff;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+/* Mobile-friendly adjustments */
+@media (max-width: 768px) {
+    #game-container {
+        width: 100%;
+        height: auto;
+        min-height: 300px;
+        max-height: none;
+    }
+    
+    .fence {
+        max-width: 100%;
+    }
+    
+    #debug-info {
+        max-height: 25vh;
+        font-size: 10px;
+    }
+    
+    .controls button {
+        padding: 8px;
+        font-size: 12px;
+    }
+}
