@@ -13,8 +13,7 @@ body {
 }
 
 #game-container {
-    width: 100%;
-    max-width: 5036px;
+    width: 5036px; /* Fixed width - do not scale down */
     height: 400px;
     min-height: 300px;
     max-height: 400px;
@@ -120,13 +119,19 @@ canvas {
 
 /* Mobile-friendly adjustments */
 @media (max-width: 768px) {
+    body {
+        overflow-x: auto; /* Allow horizontal scrolling */
+    }
+    
     #game-container {
-        width: 100%;
+        width: 5036px; /* Keep fixed width */
         height: 400px;
         min-height: 300px;
         max-height: 400px;
-        position: fixed;
+        position: absolute; /* Changed from fixed to allow scrolling */
         top: 0;
+        left: 0;
+        transform: none; /* Prevent any automatic centering */
     }
     
     .fence {
@@ -147,11 +152,13 @@ canvas {
 /* Landscape orientation adjustments */
 @media (max-width: 768px) and (orientation: landscape) {
     #game-container {
+        width: 5036px; /* Keep fixed width */
         height: 100vh;
         min-height: 200px;
         max-height: none;
-        position: fixed;
+        position: absolute; /* Changed from fixed to allow scrolling */
         top: 0;
+        left: 0;
     }
     
     .fence {
@@ -171,10 +178,12 @@ canvas {
 /* High-DPI screens */
 @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
     #game-container {
+        width: 5036px; /* Keep fixed width */
         height: 400px;
         min-height: 300px;
-        position: fixed;
+        position: absolute; /* Changed from fixed to allow scrolling */
         top: 0;
+        left: 0;
     }
 }
 
