@@ -1,11 +1,6 @@
 export default class MobileStartScene extends Phaser.Scene {
     constructor() {
         super({ key: 'MobileStartScene' });
-        // Track game state
-        this.gameState = {
-            characterVisible: false,
-            platformClicked: false
-        };
     }
 
     preload() {
@@ -66,11 +61,19 @@ export default class MobileStartScene extends Phaser.Scene {
         logo.setDepth(3);
         
         // Calculate logo scale based on viewport width
-        const viewportWidth = window.innerWidth;
-        const targetWidth = viewportWidth * 0.8; // 80vw
-        const baseScale = 0.53 * 0.67; // Original scale reduced by 33%
-        const logoScale = Math.min(targetWidth / logo.width, baseScale);
-        logo.setScale(logoScale);
+        const updateLogoScale = () => {
+            const viewportWidth = window.innerWidth;
+            const targetWidth = viewportWidth * 0.8; // 80vw
+            const baseScale = 0.53 * 0.67; // Original scale reduced by 33%
+            const scale = Math.min(targetWidth / logo.width, baseScale);
+            logo.setScale(scale);
+        };
+        
+        // Initial scale
+        updateLogoScale();
+        
+        // Update on resize
+        this.scale.on('resize', updateLogoScale);
 
         // Add bloodmoon platform in the center
         const platform = this.add.image(width/2, height/2 - 10, 'platform');
@@ -176,14 +179,15 @@ export default class MobileStartScene extends Phaser.Scene {
             color: '#ffffff',
             align: 'center',
             stroke: '#000000',
-            strokeThickness: 3
+            strokeThickness: 4,
+            shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 2, stroke: true, fill: true }
         });
         this.instructionText.setOrigin(0.5, 0.5);
         this.instructionText.setDepth(10);
         
         // Function to update instruction text based on game state
         const updateInstructionText = () => {
-            if (!this.gameState.characterVisible) {
+            if (!character.visible) {
                 this.instructionText.setText('tap on darth plat');
             } else {
                 this.instructionText.setText('tap anywhere to move collasus');
@@ -192,10 +196,6 @@ export default class MobileStartScene extends Phaser.Scene {
         
         // Function to play explosion animation
         const playExplosion = () => {
-            // Prevent multiple clicks
-            if (this.gameState.platformClicked) return;
-            this.gameState.platformClicked = true;
-            
             // Disable the input temporarily to prevent multiple clicks
             platform.disableInteractive();
             book.disableInteractive();
@@ -223,12 +223,22 @@ export default class MobileStartScene extends Phaser.Scene {
                 ease: 'Power2'
             });
             
+            // Circle high effect
+            this.tweens.add({
+                targets: circleHigh,
+                alpha: 0.8,
+                duration: 300,
+                ease: 'Power2'
+            });
+            
             // Show character with delay
             this.time.delayedCall(800, () => {
                 // Make character visible with animation
                 character.setVisible(true);
                 character.setAlpha(0);
-                this.gameState.characterVisible = true;
+                
+                // Add a dramatic camera shake
+                this.cameras.main.shake(500, 0.005);
                 
                 // Fade in character
                 this.tweens.add({
@@ -245,6 +255,14 @@ export default class MobileStartScene extends Phaser.Scene {
                             ease: 'Power2'
                         });
                         
+                        // Fade out circle high
+                        this.tweens.add({
+                            targets: circleHigh,
+                            alpha: 0,
+                            duration: 500,
+                            ease: 'Power2'
+                        });
+                        
                         // Update and fade in text
                         updateInstructionText();
                         this.tweens.add({
@@ -256,13 +274,13 @@ export default class MobileStartScene extends Phaser.Scene {
                         
                         // Enable click-to-move functionality
                         this.input.on('pointerdown', (pointer) => {
-                            if (!this.gameState.characterVisible) return;
+                            if (!character.visible) return;
                             
                             const targetX = pointer.x;
                             const targetY = Math.max(pointer.y, platform.y - 50);
                             const distance = Phaser.Math.Distance.Between(character.x, character.y, targetX, targetY);
                             const duration = distance * 2;
-
+                            
                             // Calculate scale based on Y position
                             const baseScale = 0.225; // His initial size
                             const maxY = platform.y + platform.displayHeight/2; // Bottom boundary
@@ -303,7 +321,6 @@ export default class MobileStartScene extends Phaser.Scene {
                         // Re-enable platform and book interaction
                         platform.setInteractive({ useHandCursor: true, pixelPerfect: false });
                         book.setInteractive({ useHandCursor: true, pixelPerfect: false });
-                        this.gameState.platformClicked = false;
                     }
                 });
             });
@@ -356,22 +373,80 @@ export default class MobileStartScene extends Phaser.Scene {
             ease: 'Sine.easeInOut'
         });
         
-        // Handle window resize
-        this.scale.on('resize', this.resize, this);
-    }
-    
-    // Handle resize events
-    resize(gameSize) {
-        const width = gameSize.width;
-        const height = gameSize.height;
+        // Handle orientation changes
+        this.scale.on('resize', (gameSize) => {
+            console.log(`Game resized to ${gameSize.width}x${gameSize.height}`);
+            
+            // Recalculate positions based on new dimensions
+            const newWidth = gameSize.width;
+            const newHeight = gameSize.height;
+            
+            // Update background position and scale
+            bg.setPosition(newWidth/2, newHeight/2);
+            const newScaleX = newWidth / bg.width;
+            const newScaleY = newHeight / bg.height;
+            const newScale = Math.max(newScaleX, newScaleY);
+            bg.setScale(newScale);
+            
+            // Update circle layers
+            circleLow.setPosition(newWidth/2, newHeight/2);
+            circleLow.setScale(newScale);
+            circleHigh.setPosition(newWidth/2, newHeight/2);
+            circleHigh.setScale(newScale);
+            
+            // Update logo position
+            logo.setPosition(newWidth/2, newHeight * 0.1);
+            
+            // Update platform position
+            platform.setPosition(newWidth/2, newHeight/2 - 10);
+            
+            // Update book container position
+            bookContainer.setPosition(newWidth/2, newHeight/2 + 10);
+            
+            // Update explosion container position
+            explosionContainer.setPosition(newWidth/2, newHeight * 0.3 - 25);
+            
+            // Update character position if not moving
+            if (character.visible && !character.anims.isPlaying) {
+                character.setPosition(newWidth/2, newHeight/2 - 20);
+            }
+            
+            // Update instruction text position
+            this.instructionText.setPosition(newWidth/2, newHeight * 0.85);
+            
+            // Update font size based on screen width
+            const baseFontSize = 24;
+            const baseWidth = 1920;
+            const scaleFactor = Math.min(1, newWidth / baseWidth);
+            const newFontSize = Math.max(16, Math.floor(baseFontSize * scaleFactor));
+            this.instructionText.setFontSize(`${newFontSize}px`);
+        });
         
-        // Update any UI elements that need repositioning
-        if (this.instructionText) {
-            this.instructionText.setPosition(width/2, height * 0.85);
-        }
+        // Initial intro animation
+        this.cameras.main.fadeIn(1000, 0, 0, 0);
+        
+        // Add subtle floating animation to platform
+        this.tweens.add({
+            targets: platform,
+            y: platform.y - 5,
+            duration: 2000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+        
+        // Add subtle floating animation to book container
+        this.tweens.add({
+            targets: bookContainer,
+            y: bookContainer.y + 5,
+            duration: 2500,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
     }
 
     update() {
-        // Performance optimization - only update what's needed
+        // Update logic if needed
     }
 }

@@ -13,16 +13,14 @@ body {
 }
 
 #game-container {
-    width: 5036px; /* Fixed width - do not scale down */
+    width: 100%;
+    max-width: 5036px;
     height: 400px;
     min-height: 300px;
     max-height: 400px;
     background-color: #000;
     position: relative;
     overflow: visible;
-    top: 0;
-    left: 0;
-    right: 0;
 }
 
 canvas {
@@ -119,19 +117,11 @@ canvas {
 
 /* Mobile-friendly adjustments */
 @media (max-width: 768px) {
-    body {
-        overflow-x: auto; /* Allow horizontal scrolling */
-    }
-    
     #game-container {
-        width: 5036px; /* Keep fixed width */
-        height: 400px;
+        width: 100%;
+        height: auto;
         min-height: 300px;
-        max-height: 400px;
-        position: absolute; /* Changed from fixed to allow scrolling */
-        top: 0;
-        left: 0;
-        transform: none; /* Prevent any automatic centering */
+        max-height: none;
     }
     
     .fence {
@@ -152,13 +142,8 @@ canvas {
 /* Landscape orientation adjustments */
 @media (max-width: 768px) and (orientation: landscape) {
     #game-container {
-        width: 5036px; /* Keep fixed width */
-        height: 100vh;
+        height: 80vh;
         min-height: 200px;
-        max-height: none;
-        position: absolute; /* Changed from fixed to allow scrolling */
-        top: 0;
-        left: 0;
     }
     
     .fence {
@@ -178,12 +163,8 @@ canvas {
 /* High-DPI screens */
 @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
     #game-container {
-        width: 5036px; /* Keep fixed width */
-        height: 400px;
+        height: auto;
         min-height: 300px;
-        position: absolute; /* Changed from fixed to allow scrolling */
-        top: 0;
-        left: 0;
     }
 }
 
