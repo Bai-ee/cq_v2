@@ -40,6 +40,10 @@ export default class MobileStartScene extends Phaser.Scene {
         const width = this.cameras.main.width;
         const height = this.cameras.main.height;
         
+        // Store initial dimensions for reference
+        this.initialWidth = width;
+        this.initialHeight = height;
+        
         // Add background image
         const bg = this.add.sprite(width/2, height/2, 'background');
         bg.setOrigin(0.5, 0.5);
@@ -83,14 +87,22 @@ export default class MobileStartScene extends Phaser.Scene {
         // Initial scale
         updateLogoScale();
 
-        // Add bloodmoon platform in the center
-        const platform = this.add.image(width/2, height/2 - 10, 'platform');
+        // Define the fixed position for the platform (center of the screen)
+        const platformX = width/2;
+        const platformY = height/2 - 10;
+        
+        // Add bloodmoon platform in the center with fixed position
+        const platform = this.add.image(platformX, platformY, 'platform');
         platform.setOrigin(0.5, 0.5);
         platform.setDepth(4);
         
-        // Scale platform appropriately (0.425 - 10% = 0.3825)
+        // Scale platform appropriately (0.3825)
         const platformScale = 0.3825;
         platform.setScale(platformScale);
+        
+        // Store the original platform position
+        this.platformOriginalX = platformX;
+        this.platformOriginalY = platformY;
 
         // Create container for book and its glow effect
         const bookContainer = this.add.container(width/2, height/2 + 10);
@@ -138,7 +150,11 @@ export default class MobileStartScene extends Phaser.Scene {
         // Initially hide the explosion
         explosion.setVisible(false);
 
-        // Add instruction text with responsive width
+        // Define the fixed position for Collasus
+        const collasusStartX = width/2;
+        const collasusStartY = height/2 - 20;
+
+        // Add instruction text with responsive width - FIXED TEXT, NO ANIMATION
         const instructionText = this.add.text(width/2, height * 0.85 - 5, 'tap on darth plat', {
             fontFamily: '"Comic Sans MS", cursive, sans-serif',
             fontSize: '24px',
@@ -153,7 +169,7 @@ export default class MobileStartScene extends Phaser.Scene {
         // Store reference for font resizing
         this.instructionText = instructionText;
 
-        // Function to update instruction text based on game state
+        // Function to update instruction text based on game state - NO ANIMATION
         const updateInstructionText = () => {
             if (!collasus.visible) {
                 instructionText.setText('tap on darth plat');
@@ -254,20 +270,17 @@ export default class MobileStartScene extends Phaser.Scene {
             });
         };
 
-        // Function to play explosion animation
+        // Function to play explosion animation and handle Collasus behavior
         const playExplosion = () => {
             console.log("MobileStartScene: playExplosion triggered");
+            
+            // Always show explosion
             explosion.setVisible(true);
             explosion.play('explode');
 
-            // Immediately fade out text completely
-            this.tweens.add({
-                targets: instructionText,
-                alpha: 0,
-                duration: 300,
-                ease: 'Power2'
-            });
-
+            // Immediately set text without animation
+            instructionText.alpha = 1;
+            
             // Create a group of background items to fade (excluding text)
             const fadeItems = [logo, platform, book, bookGlow, bookContainer, bg];
             
@@ -308,20 +321,13 @@ export default class MobileStartScene extends Phaser.Scene {
                             }
                         });
                         
-                        // Update text content before fading back in
+                        // Update text content without animation
                         updateInstructionText();
-                        // Fade in text
-                        this.tweens.add({
-                            targets: instructionText,
-                            alpha: 1,
-                            duration: 500,
-                            ease: 'Power2'
-                        });
                     });
                 });
             } else {
-                // If Collasus is visible, make him walk to center and disappear
-                const distance = Phaser.Math.Distance.Between(collasus.x, collasus.y, width/2, height/2 - 20);
+                // If Collasus is visible, make him walk back to starting point and disappear
+                const distance = Phaser.Math.Distance.Between(collasus.x, collasus.y, collasusStartX, collasusStartY);
                 const duration = distance * 2;
 
                 // Disable click-to-move while returning to center
@@ -329,12 +335,13 @@ export default class MobileStartScene extends Phaser.Scene {
 
                 // Walk to center
                 collasus.play('walk');
-                collasus.setFlipX((width/2) > collasus.x);
+                collasus.setFlipX((collasusStartX) > collasus.x);
 
                 this.tweens.add({
                     targets: collasus,
-                    x: width/2,
-                    y: height/2 - 20,
+                    x: collasusStartX,
+                    y: collasusStartY,
+                    scale: 0.225, // Reset to original scale
                     duration: duration,
                     ease: 'Linear',
                     onComplete: () => {
@@ -363,15 +370,8 @@ export default class MobileStartScene extends Phaser.Scene {
                                     }
                                 });
                                 
-                                // Update text content before fading back in
+                                // Update text content without animation
                                 updateInstructionText();
-                                // Fade in text
-                                this.tweens.add({
-                                    targets: instructionText,
-                                    alpha: 1,
-                                    duration: 500,
-                                    ease: 'Power2'
-                                });
                             }
                         });
                     }
@@ -409,7 +409,7 @@ export default class MobileStartScene extends Phaser.Scene {
         });
 
         // Add Collasus character (initially hidden)
-        const collasus = this.add.sprite(width/2, height/2 - 20, 'collasus');
+        const collasus = this.add.sprite(collasusStartX, collasusStartY, 'collasus');
         collasus.setDepth(1000);
         collasus.setScale(0.225);
         collasus.setAlpha(0); // Start invisible
@@ -440,6 +440,28 @@ export default class MobileStartScene extends Phaser.Scene {
         // Start with idle animation
         collasus.play('idle');
         
+        // Store references to key objects for resize handling
+        this.platform = platform;
+        this.collasus = collasus;
+        this.collasusStartX = collasusStartX;
+        this.collasusStartY = collasusStartY;
+        
+        // Handle resize events to keep platform in original position
+        this.scale.on('resize', this.handleResize, this);
+        
         console.log("MobileStartScene: create completed");
+    }
+    
+    // Handle resize while maintaining platform position
+    handleResize(gameSize) {
+        // Keep platform at its original position
+        if (this.platform && this.platformOriginalX && this.platformOriginalY) {
+            this.platform.setPosition(this.platformOriginalX, this.platformOriginalY);
+        }
+        
+        // If Collasus is not visible, make sure he's at the start position
+        if (this.collasus && !this.collasus.visible && this.collasusStartX && this.collasusStartY) {
+            this.collasus.setPosition(this.collasusStartX, this.collasusStartY);
+        }
     }
 }
