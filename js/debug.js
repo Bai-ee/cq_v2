@@ -348,65 +348,84 @@ function startFullGame() {
     logInfo('Starting full game experience');
     if (currentGame) currentGame.destroy(true);
     
-    // Import the original StartScene to use in our game
-    import('./scenes/StartScene.js')
-        .then((module) => {
-            const StartScene = module.default;
-            
-            const config = {
-                type: Phaser.AUTO,
-                parent: 'game-container',
-                scale: {
-                    mode: Phaser.Scale.FIT,
-                    autoCenter: Phaser.Scale.CENTER_BOTH,
-                    width: 1920,
-                    height: 400,
-                    min: {
-                        width: 800,
-                        height: 200
-                    },
-                    max: {
-                        width: 1920,
-                        height: 800
-                    }
+    try {
+        // Create a more direct approach to loading the StartScene
+        const gameConfig = {
+            type: Phaser.AUTO,
+            parent: 'game-container',
+            scale: {
+                mode: Phaser.Scale.FIT,
+                autoCenter: Phaser.Scale.CENTER_BOTH,
+                width: 1920,
+                height: 400,
+                min: {
+                    width: 800,
+                    height: 200
                 },
-                scene: StartScene,
-                backgroundColor: '#000000',
-                // Explicitly enable touch input for mobile
-                input: {
-                    touch: true,
-                    activePointers: 1 // Set to 1 for better mobile performance
+                max: {
+                    width: 1920,
+                    height: 800
                 }
-            };
-            
-            currentGame = new Phaser.Game(config);
-            
-            // Handle responsive font sizing (from original game.js)
-            const baseFontSize = 18;
-            const baseWidth = 1920;
-            
-            currentGame.events.on('resize', (gameSize) => {
-                logInfo(`Game resized to ${gameSize.width}x${gameSize.height}`);
-                // Calculate new font size based on screen width
-                const scaleFactor = Math.min(1, gameSize.width / baseWidth);
-                const newFontSize = Math.max(14, Math.floor(baseFontSize * scaleFactor));
+            },
+            backgroundColor: '#000000',
+            // Explicitly enable touch input for mobile
+            input: {
+                touch: true,
+                activePointers: 1 // Set to 1 for better mobile performance
+            }
+        };
+        
+        // Load StartScene directly from the original game.js approach
+        logInfo('Loading game using import()/require() approach');
+        
+        // Create the game instance
+        currentGame = new Phaser.Game(gameConfig);
+        
+        // Add a dynamic import for the StartScene
+        import('../js/scenes/StartScene.js')
+            .then(module => {
+                const StartScene = module.default;
+                logInfo('StartScene loaded, adding to game');
                 
-                // Update font size in the current scene
-                const currentScene = currentGame.scene.getScenes(true)[0];
-                if (currentScene && currentScene.instructionText) {
-                    currentScene.instructionText.setFontSize(newFontSize + 'px');
-                }
+                // Add the scene manually
+                currentGame.scene.add('StartScene', StartScene);
+                currentGame.scene.start('StartScene');
+                
+                // Handle responsive font sizing (from original game.js)
+                const baseFontSize = 18;
+                const baseWidth = 1920;
+                
+                currentGame.events.on('resize', (gameSize) => {
+                    logInfo(`Game resized to ${gameSize.width}x${gameSize.height}`);
+                    // Calculate new font size based on screen width
+                    const scaleFactor = Math.min(1, gameSize.width / baseWidth);
+                    const newFontSize = Math.max(14, Math.floor(baseFontSize * scaleFactor));
+                    
+                    // Update font size in the current scene
+                    const currentScene = currentGame.scene.getScenes(true)[0];
+                    if (currentScene && currentScene.instructionText) {
+                        currentScene.instructionText.setFontSize(newFontSize + 'px');
+                    }
+                });
+                
+                logInfo('Full game loaded successfully');
+            })
+            .catch(error => {
+                logInfo(`ERROR loading StartScene module: ${error.message}`);
+                fallbackToDebugMode();
             });
-            
-            logInfo('Full game loaded successfully');
-        })
-        .catch(error => {
-            logInfo(`ERROR loading full game: ${error.message}`);
-            // Fall back to character test if full game fails to load
-            inFullGameMode = false;
-            document.getElementById('toggle-full-game').textContent = 'Switch to Full Game';
-            startCharacterTest();
-        });
+    } catch (error) {
+        logInfo(`ERROR initializing full game: ${error.message}`);
+        fallbackToDebugMode();
+    }
+}
+
+// Helper function to fall back to debug mode
+function fallbackToDebugMode() {
+    logInfo('Falling back to debug mode due to errors');
+    inFullGameMode = false;
+    document.getElementById('toggle-full-game').textContent = 'Switch to Full Game';
+    startCharacterTest();
 }
 
 // Register for window resize events
