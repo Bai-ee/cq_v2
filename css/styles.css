@@ -1,0 +1,41 @@
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100vh;
+    background-color: #19500A;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+#game-container {
+    width: 5036px;
+    height: 400px;
+    min-height: 400px;
+    max-height: 400px;
+    background-color: #000;
+    position: relative;
+    overflow: visible;
+}
+
+canvas {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain;
+}
+
+.fence {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+    height: auto;
+    max-width: 1400px;
+    pointer-events: none;
+    z-index: 9999;
+    margin-top: -70px;
+}
