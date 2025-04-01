@@ -24,7 +24,7 @@
             position: fixed;
             top: 10px;
             left: 10px;
-            background: rgba(0,0,0,0.7);
+            background: rgba(255,255,255,0.9);
             color: #ff3333;
             padding: 10px;
             font-family: monospace;
@@ -35,131 +35,84 @@
             font-size: 12px;
             border-radius: 5px;
             border: 1px solid #ff3333;
-            display: none;
         }
     </style>
 </head>
 <body>
     <div id="error-display"></div>
-    <div id="game-container">
-        <img src="assets/images/fence.png" alt="fence" class="fence">
-    </div>
+    <div id="game-container"></div>
     <a href="./index.html" id="debug-button">Switch to Debug Mode</a>
     
     <script>
-        // Mobile detection logging
-        const deviceDetector = {
-            isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
-            
-            logInfo: function() {
-                console.log(`Device detected: ${this.isMobile ? 'Mobile' : 'Desktop'}`);
-                console.log(`Screen: ${window.innerWidth}x${window.innerHeight}, Pixel Ratio: ${window.devicePixelRatio}`);
-                console.log(`Touch events: ${('ontouchstart' in window) ? 'Supported' : 'Not supported'}`);
-                console.log(`Pointer events: ${(window.PointerEvent) ? 'Supported' : 'Not supported'}`);
-            }
-        };
-        
-        deviceDetector.logInfo();
-        
         // Error display element
         const errorDisplay = document.getElementById('error-display');
         
         // Error handler
         window.addEventListener('error', function(e) {
             console.error('ERROR:', e.message, 'at', e.filename, 'line', e.lineno);
-            
-            // Display error on screen for mobile debugging
-            errorDisplay.style.display = 'block';
             errorDisplay.innerHTML += `<div>ERROR: ${e.message} at line ${e.lineno}</div>`;
-            
-            // Auto-scroll to bottom
             errorDisplay.scrollTop = errorDisplay.scrollHeight;
-            
-            // Prevent default error handling
-            e.preventDefault();
         });
-    </script>
-    
-    <script type="module">
-        // Use the device detector from the previous script
-        const usesMobileScene = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        
-        // Import the mobile-optimized scene for mobile devices, or the original for desktop
-        let SceneClass;
-        
-        if (usesMobileScene) {
-            import('./js/scenes/MobileStartScene.js').then(module => {
-                startGame(module.default);
-                console.log('Using MobileStartScene for this device');
-            }).catch(error => {
-                console.error('Error loading MobileStartScene:', error);
-                document.getElementById('error-display').style.display = 'block';
-                document.getElementById('error-display').innerHTML += `<div>IMPORT ERROR: ${error.message}</div>`;
-            });
-        } else {
-            import('./js/scenes/StartScene.js').then(module => {
-                startGame(module.default);
-                console.log('Using StartScene for this device');
-            }).catch(error => {
-                console.error('Error loading StartScene:', error);
-                document.getElementById('error-display').style.display = 'block';
-                document.getElementById('error-display').innerHTML += `<div>IMPORT ERROR: ${error.message}</div>`;
-            });
-        }
-        
-        function startGame(SceneClass) {
-            // Configure the game
-            const config = {
-                type: Phaser.AUTO,
-                parent: 'game-container',
-                scale: {
-                    mode: Phaser.Scale.FIT,
-                    autoCenter: Phaser.Scale.CENTER_BOTH,
-                    width: 1920,
-                    height: 400,
-                    min: {
-                        width: 800,
-                        height: 200
-                    },
-                    max: {
-                        width: 1920,
-                        height: 800
-                    }
-                },
-                scene: SceneClass,
-                backgroundColor: '#000000',
-                // Explicitly enable touch input for mobile
-                input: {
-                    touch: true,
-                    activePointers: 1
-                }
-            };
-            
-            try {
-                // Create the game
-                const game = new Phaser.Game(config);
-                
-                // Handle responsive font sizing
-                const baseFontSize = 18;
-                const baseWidth = 1920;
-                
-                game.events.on('resize', (gameSize) => {
-                    console.log(`Game resized to ${gameSize.width}x${gameSize.height}`);
-                    // Calculate new font size based on screen width
-                    const scaleFactor = Math.min(1, gameSize.width / baseWidth);
-                    const newFontSize = Math.max(14, Math.floor(baseFontSize * scaleFactor));
-                    
-                    // Update font size in the current scene
-                    const currentScene = game.scene.getScenes(true)[0];
-                    if (currentScene && currentScene.instructionText) {
-                        currentScene.instructionText.setFontSize(newFontSize + 'px');
-                    }
-                });
-            } catch (error) {
-                console.error('Game initialization error:', error);
-                document.getElementById('error-display').style.display = 'block';
-                document.getElementById('error-display').innerHTML += `<div>INIT ERROR: ${error.message}</div>`;
+
+        // Simple scene for testing
+        class SimpleScene extends Phaser.Scene {
+            constructor() {
+                super({ key: 'SimpleScene' });
             }
+
+            preload() {
+                console.log('Preload started');
+                // Load only essential assets
+                this.load.image('logo', 'assets/images/cq_logo.png');
+                this.load.image('background', 'assets/images/bg.jpg');
+                console.log('Preload completed');
+            }
+
+            create() {
+                console.log('Create started');
+                const width = this.cameras.main.width;
+                const height = this.cameras.main.height;
+                
+                // Add background
+                const bg = this.add.sprite(width/2, height/2, 'background');
+                bg.setOrigin(0.5, 0.5);
+                
+                // Add logo
+                const logo = this.add.sprite(width/2, height/2, 'logo');
+                logo.setOrigin(0.5, 0.5);
+                logo.setScale(0.5);
+                
+                console.log('Create completed');
+            }
+        }
+
+        // Configure the game with minimal settings
+        const config = {
+            type: Phaser.AUTO,
+            parent: 'game-container',
+            scale: {
+                mode: Phaser.Scale.FIT,
+                autoCenter: Phaser.Scale.CENTER_BOTH,
+                width: 1920,
+                height: 400,
+                min: {
+                    width: 320,
+                    height: 200
+                }
+            },
+            scene: SimpleScene,
+            backgroundColor: '#000000',
+            input: {
+                touch: true
+            }
+        };
+
+        try {
+            const game = new Phaser.Game(config);
+            console.log('Game initialized');
+        } catch (error) {
+            console.error('Game initialization error:', error);
+            errorDisplay.innerHTML += `<div>INIT ERROR: ${error.message}</div>`;
         }
     </script>
 </body>
