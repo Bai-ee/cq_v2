@@ -21,6 +21,9 @@ body {
     background-color: #000;
     position: relative;
     overflow: visible;
+    top: 0;
+    left: 0;
+    right: 0;
 }
 
 canvas {
@@ -119,9 +122,11 @@ canvas {
 @media (max-width: 768px) {
     #game-container {
         width: 100%;
-        height: auto;
+        height: 400px;
         min-height: 300px;
-        max-height: none;
+        max-height: 400px;
+        position: fixed;
+        top: 0;
     }
     
     .fence {
@@ -142,8 +147,11 @@ canvas {
 /* Landscape orientation adjustments */
 @media (max-width: 768px) and (orientation: landscape) {
     #game-container {
-        height: 80vh;
+        height: 100vh;
         min-height: 200px;
+        max-height: none;
+        position: fixed;
+        top: 0;
     }
     
     .fence {
@@ -163,8 +171,10 @@ canvas {
 /* High-DPI screens */
 @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
     #game-container {
-        height: auto;
+        height: 400px;
         min-height: 300px;
+        position: fixed;
+        top: 0;
     }
 }
 
