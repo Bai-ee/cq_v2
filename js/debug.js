@@ -52,6 +52,10 @@ function startBasicTest() {
         scene: {
             preload: basicPreload,
             create: basicCreate
+        },
+        // Explicitly enable touch input
+        input: {
+            touch: true
         }
     };
     
@@ -93,8 +97,19 @@ function basicCreate() {
         text.setText(`Tap detected at ${Math.floor(pointer.x)}, ${Math.floor(pointer.y)}`);
     });
     
-    // Report active input plugins
-    logInfo(`Input plugins active: ${Object.keys(this.input.plugins.list).join(', ')}`);
+    // Report input manager status safely
+    try {
+        if (this.input.plugins && this.input.plugins.list) {
+            logInfo(`Input plugins active: ${Object.keys(this.input.plugins.list).join(', ')}`);
+        } else {
+            logInfo('Input plugins structure not available on this device');
+        }
+        
+        // Log more details about available input managers
+        logInfo(`Input manager: keyboard=${!!this.input.keyboard}, touch=${!!this.input.touch}, pointer=${!!this.input.pointer}`);
+    } catch (e) {
+        logInfo(`Could not access input plugins: ${e.message}`);
+    }
 }
 
 // Platform test with interactive element
@@ -115,6 +130,10 @@ function startPlatformTest() {
         scene: {
             preload: platformPreload,
             create: platformCreate
+        },
+        // Explicitly enable touch input
+        input: {
+            touch: true
         }
     };
     
@@ -145,9 +164,14 @@ function platformCreate() {
     platform.setOrigin(0.5, 0.5);
     platform.setScale(0.3);
     
-    // Make the platform interactive
-    platform.setInteractive({ useHandCursor: true });
+    // Make the platform interactive with additional options for mobile
+    platform.setInteractive({ 
+        useHandCursor: true,
+        pixelPerfect: false, // Disable pixel perfect for better mobile performance
+        draggable: false 
+    });
     
+    // Log when platform interaction events happen
     platform.on('pointerover', function() {
         logInfo('Platform pointer over');
         this.setTint(0xff0000);
@@ -195,6 +219,10 @@ function startCharacterTest() {
         scene: {
             preload: characterPreload,
             create: characterCreate
+        },
+        // Explicitly enable touch input
+        input: {
+            touch: true
         }
     };
     
