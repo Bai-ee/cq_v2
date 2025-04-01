@@ -1,6 +1,11 @@
 export default class MobileStartScene extends Phaser.Scene {
     constructor() {
         super({ key: 'MobileStartScene' });
+        // Track game state
+        this.gameState = {
+            characterVisible: false,
+            platformClicked: false
+        };
     }
 
     preload() {
@@ -169,14 +174,16 @@ export default class MobileStartScene extends Phaser.Scene {
             fontFamily: '"Comic Sans MS", cursive, sans-serif',
             fontSize: '24px',
             color: '#ffffff',
-            align: 'center'
+            align: 'center',
+            stroke: '#000000',
+            strokeThickness: 3
         });
         this.instructionText.setOrigin(0.5, 0.5);
         this.instructionText.setDepth(10);
         
         // Function to update instruction text based on game state
         const updateInstructionText = () => {
-            if (!character.visible) {
+            if (!this.gameState.characterVisible) {
                 this.instructionText.setText('tap on darth plat');
             } else {
                 this.instructionText.setText('tap anywhere to move collasus');
@@ -185,6 +192,10 @@ export default class MobileStartScene extends Phaser.Scene {
         
         // Function to play explosion animation
         const playExplosion = () => {
+            // Prevent multiple clicks
+            if (this.gameState.platformClicked) return;
+            this.gameState.platformClicked = true;
+            
             // Disable the input temporarily to prevent multiple clicks
             platform.disableInteractive();
             book.disableInteractive();
@@ -217,6 +228,7 @@ export default class MobileStartScene extends Phaser.Scene {
                 // Make character visible with animation
                 character.setVisible(true);
                 character.setAlpha(0);
+                this.gameState.characterVisible = true;
                 
                 // Fade in character
                 this.tweens.add({
@@ -244,7 +256,7 @@ export default class MobileStartScene extends Phaser.Scene {
                         
                         // Enable click-to-move functionality
                         this.input.on('pointerdown', (pointer) => {
-                            if (!character.visible) return;
+                            if (!this.gameState.characterVisible) return;
                             
                             const targetX = pointer.x;
                             const targetY = Math.max(pointer.y, platform.y - 50);
@@ -291,6 +303,7 @@ export default class MobileStartScene extends Phaser.Scene {
                         // Re-enable platform and book interaction
                         platform.setInteractive({ useHandCursor: true, pixelPerfect: false });
                         book.setInteractive({ useHandCursor: true, pixelPerfect: false });
+                        this.gameState.platformClicked = false;
                     }
                 });
             });
@@ -342,9 +355,23 @@ export default class MobileStartScene extends Phaser.Scene {
             repeat: -1,
             ease: 'Sine.easeInOut'
         });
+        
+        // Handle window resize
+        this.scale.on('resize', this.resize, this);
+    }
+    
+    // Handle resize events
+    resize(gameSize) {
+        const width = gameSize.width;
+        const height = gameSize.height;
+        
+        // Update any UI elements that need repositioning
+        if (this.instructionText) {
+            this.instructionText.setPosition(width/2, height * 0.85);
+        }
     }
 
     update() {
-        // Update logic if needed
+        // Performance optimization - only update what's needed
     }
 }
