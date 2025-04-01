@@ -9,12 +9,14 @@ body {
     align-items: center;
     position: relative;
     overflow: hidden;
+    touch-action: manipulation; /* Prevents browser handling of gestures */
 }
 
 #game-container {
-    width: 5036px;
+    width: 100%;
+    max-width: 5036px;
     height: 400px;
-    min-height: 400px;
+    min-height: 300px;
     max-height: 400px;
     background-color: #000;
     position: relative;
@@ -25,6 +27,7 @@ canvas {
     width: 100% !important;
     height: 100% !important;
     object-fit: contain;
+    touch-action: none; /* Prevents browser handling of all gestures */
 }
 
 .fence {
@@ -67,7 +70,7 @@ canvas {
     z-index: 10000;
 }
 
-.controls button {
+.controls button, .controls a.button {
     margin: 5px;
     padding: 10px;
     background: rgba(0,0,0,0.7);
@@ -76,6 +79,40 @@ canvas {
     border-radius: 5px;
     font-size: 14px;
     cursor: pointer;
+    text-align: center;
+}
+
+#error-display {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    background: rgba(0,0,0,0.7);
+    color: #ff3333;
+    padding: 10px;
+    font-family: monospace;
+    z-index: 10000;
+    max-width: 90%;
+    max-height: 30vh;
+    overflow: auto;
+    font-size: 12px;
+    border-radius: 5px;
+    border: 1px solid #ff0000;
+    display: none;
+}
+
+#debug-button {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    padding: 10px 15px;
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    border: 1px solid #fff;
+    border-radius: 5px;
+    z-index: 10000;
+    font-size: 14px;
+    cursor: pointer;
+    text-decoration: none;
 }
 
 /* Mobile-friendly adjustments */
@@ -91,13 +128,53 @@ canvas {
         max-width: 100%;
     }
     
-    #debug-info {
+    #debug-info, #error-display {
         max-height: 25vh;
         font-size: 10px;
     }
     
-    .controls button {
+    .controls button, .controls a.button, #debug-button {
         padding: 8px;
         font-size: 12px;
     }
+}
+
+/* Landscape orientation adjustments */
+@media (max-width: 768px) and (orientation: landscape) {
+    #game-container {
+        height: 80vh;
+        min-height: 200px;
+    }
+    
+    .fence {
+        margin-top: -40px;
+    }
+    
+    .controls, #debug-button {
+        bottom: 5px;
+    }
+    
+    .controls button, .controls a.button, #debug-button {
+        padding: 6px;
+        font-size: 11px;
+    }
+}
+
+/* High-DPI screens */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    #game-container {
+        height: auto;
+        min-height: 300px;
+    }
+}
+
+/* Prevent text selection on mobile */
+* {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
