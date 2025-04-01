@@ -7,6 +7,33 @@
     <link rel="stylesheet" href="css/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
     <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow-x: auto;
+            background: #19500A;
+        }
+        #game-container {
+            width: 1400px !important;
+            height: 400px !important;
+            margin: 0 auto;
+            position: relative;
+            background: #000;
+        }
+        #game-container canvas {
+            width: 1400px !important;
+            height: 400px !important;
+        }
+        .fence {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
         #debug-button {
             position: fixed;
             bottom: 10px;
@@ -40,67 +67,70 @@
 </head>
 <body>
     <div id="error-display"></div>
-    <div id="game-container"></div>
+    <div id="game-container">
+        <img src="assets/images/fence.png" alt="fence" class="fence">
+    </div>
     <a href="./index.html" id="debug-button">Switch to Debug Mode</a>
     
     <script>
-        // Error display element
         const errorDisplay = document.getElementById('error-display');
         
-        // Error handler
         window.addEventListener('error', function(e) {
             console.error('ERROR:', e.message, 'at', e.filename, 'line', e.lineno);
             errorDisplay.innerHTML += `<div>ERROR: ${e.message} at line ${e.lineno}</div>`;
             errorDisplay.scrollTop = errorDisplay.scrollHeight;
         });
 
-        // Simple scene for testing
-        class SimpleScene extends Phaser.Scene {
+        class GameScene extends Phaser.Scene {
             constructor() {
-                super({ key: 'SimpleScene' });
+                super({ key: 'GameScene' });
+                this.baseWidth = 1400;
+                this.baseHeight = 400;
             }
 
             preload() {
-                console.log('Preload started');
-                // Load only essential assets
                 this.load.image('logo', 'assets/images/cq_logo.png');
                 this.load.image('background', 'assets/images/bg.jpg');
-                console.log('Preload completed');
+                this.load.image('platform', 'assets/images/bloodmoon_plat.png');
+                this.load.image('book', 'assets/images/bloodmoon_faction.png');
             }
 
             create() {
-                console.log('Create started');
-                const width = this.cameras.main.width;
-                const height = this.cameras.main.height;
-                
-                // Add background
-                const bg = this.add.sprite(width/2, height/2, 'background');
+                // Add background centered in stage
+                const bg = this.add.sprite(this.baseWidth/2, this.baseHeight/2, 'background');
                 bg.setOrigin(0.5, 0.5);
                 
+                // Center and scale background to cover the stage while maintaining aspect ratio
+                const bgScaleX = this.baseWidth / bg.width;
+                const bgScaleY = this.baseHeight / bg.height;
+                const scale = Math.max(bgScaleX, bgScaleY);
+                bg.setScale(scale);
+                
                 // Add logo
-                const logo = this.add.sprite(width/2, height/2, 'logo');
+                const logo = this.add.sprite(this.baseWidth/2, 100, 'logo');
                 logo.setOrigin(0.5, 0.5);
                 logo.setScale(0.5);
                 
-                console.log('Create completed');
+                // Add platform near the bottom
+                const platform = this.add.sprite(this.baseWidth/2, this.baseHeight - 50, 'platform');
+                platform.setOrigin(0.5, 0.5);
+                
+                // Add book in the middle
+                const book = this.add.sprite(this.baseWidth/2, this.baseHeight/2, 'book');
+                book.setOrigin(0.5, 0.5);
             }
         }
 
-        // Configure the game with minimal settings
         const config = {
             type: Phaser.AUTO,
             parent: 'game-container',
             scale: {
-                mode: Phaser.Scale.FIT,
-                autoCenter: Phaser.Scale.CENTER_BOTH,
-                width: 1920,
+                mode: Phaser.Scale.NONE,
+                width: 1400,
                 height: 400,
-                min: {
-                    width: 320,
-                    height: 200
-                }
+                autoRound: true
             },
-            scene: SimpleScene,
+            scene: GameScene,
             backgroundColor: '#000000',
             input: {
                 touch: true
@@ -109,7 +139,6 @@
 
         try {
             const game = new Phaser.Game(config);
-            console.log('Game initialized');
         } catch (error) {
             console.error('Game initialization error:', error);
             errorDisplay.innerHTML += `<div>INIT ERROR: ${error.message}</div>`;
