@@ -130,6 +130,8 @@
                     // 5 frames wide (2158/432), 8 frames tall (1944/243)
                     endFrame: 37         // Total frames: 38 (0-37)
                 });
+                this.load.audio('magicIntro', 'assets/audio/MagicIntro.mp3');
+                this.load.audio('whispers', 'assets/audio/whispers.mp3');
             }
 
             create() {
@@ -139,6 +141,7 @@
                 // Add background centered in stage
                 const bg = this.add.sprite(this.baseWidth/2, this.baseHeight/2, 'background');
                 bg.setOrigin(0.5, 0.5);
+                bg.setDepth(1);
                 
                 // Center and scale background to cover the stage while maintaining aspect ratio
                 const bgScaleX = this.baseWidth / bg.width;
@@ -150,41 +153,28 @@
                 const circle = this.add.sprite(this.baseWidth/2, this.baseHeight/2, 'circle');
                 circle.setOrigin(0.5, 0.5);
                 circle.setScale(scale);
+                circle.setDepth(2);
                 
-                // Add high circle (initially invisible)
+                // Add circle_high with 0 alpha
                 const circleHigh = this.add.sprite(this.baseWidth/2, this.baseHeight/2, 'circle_high');
                 circleHigh.setOrigin(0.5, 0.5);
                 circleHigh.setScale(scale);
                 circleHigh.setAlpha(0);
-                
-                // Add logo
-                const logo = this.add.sprite(this.baseWidth/2, 100, 'logo');
-                logo.setOrigin(0.5, 0.5);
-                logo.setScale(0.5);
+                circleHigh.setDepth(3);
                 
                 // Add centered platform with reduced scale
                 const platform = this.add.sprite(this.baseWidth/2, 180, 'platform');
                 platform.setOrigin(0.5, 0.5);
                 platform.setScale(0.35);
+                platform.setDepth(4);
                 
                 // Place book above platform
                 const book = this.add.sprite(this.baseWidth/2, 210, 'book');
                 book.setOrigin(0.5, 0.5);
                 book.setScale(0.35);
-                
-                // Create explosion animation
-                this.anims.create({
-                    key: 'explode',
-                    frames: this.anims.generateFrameNumbers('explosion', { 
-                        start: 0,
-                        end: 37,
-                        first: 0
-                    }),
-                    frameRate: 24,
-                    repeat: 0  // Play only once
-                });
-                
-                // Create plat animation
+                book.setDepth(5);
+
+                // Create animations
                 this.anims.create({
                     key: 'plat_idle',
                     frames: this.anims.generateFrameNumbers('plat_idle', { 
@@ -192,30 +182,275 @@
                         end: 25
                     }),
                     frameRate: 12,
-                    repeat: -1  // Loop continuously
+                    repeat: -1
                 });
-                
-                // Create and play the plat animation
-                const plat = this.add.sprite(this.baseWidth/2, 220, 'plat_idle');
+
+                this.anims.create({
+                    key: 'plat_double_tap',
+                    frames: this.anims.generateFrameNumbers('plat_idle', { 
+                        start: 54,
+                        end: 59
+                    }),
+                    frameRate: 12,
+                    repeat: 2  // 3 times total (original + 2 repeats)
+                });
+
+                this.anims.create({
+                    key: 'plat_walk_right',
+                    frames: this.anims.generateFrameNumbers('plat_idle', { 
+                        start: 0,
+                        end: 12
+                    }),
+                    frameRate: 24,
+                    repeat: -1
+                });
+
+                this.anims.create({
+                    key: 'plat_walk_down',
+                    frames: this.anims.generateFrameNumbers('plat_idle', { 
+                        start: 33,
+                        end: 41
+                    }),
+                    frameRate: 24,
+                    repeat: -1
+                });
+
+                this.anims.create({
+                    key: 'plat_walk_up',
+                    frames: this.anims.generateFrameNumbers('plat_idle', { 
+                        start: 43,
+                        end: 51
+                    }),
+                    frameRate: 24,
+                    repeat: -1
+                });
+
+                this.anims.create({
+                    key: 'explode',
+                    frames: this.anims.generateFrameNumbers('explosion', { 
+                        start: 0,
+                        end: 37
+                    }),
+                    frameRate: 24,
+                    repeat: 0
+                });
+
+                this.anims.create({
+                    key: 'plat_float',
+                    frames: this.anims.generateFrameNumbers('plat_idle', { 
+                        start: 27,
+                        end: 27
+                    }),
+                    frameRate: 1,
+                    repeat: -1
+                });
+
+                this.anims.create({
+                    key: 'plat_land',
+                    frames: this.anims.generateFrameNumbers('plat_idle', { 
+                        start: 28,
+                        end: 31
+                    }),
+                    frameRate: 12,
+                    repeat: 0
+                });
+
+                this.anims.create({
+                    key: 'plat_takeoff',
+                    frames: this.anims.generateFrameNumbers('plat_idle', { 
+                        start: 31,
+                        end: 28
+                    }),
+                    frameRate: 12,
+                    repeat: 0
+                });
+
+                // Create a dark overlay for dimming
+                const darkOverlay = this.add.rectangle(0, 0, this.baseWidth, this.baseHeight, 0x000000);
+                darkOverlay.setOrigin(0, 0);
+                darkOverlay.setDepth(97);
+                darkOverlay.setAlpha(0);
+
+                // Play background whispers
+                const whispers = this.sound.add('whispers', {
+                    volume: 0.8,
+                    loop: true
+                });
+                whispers.play();
+
+                // Add initial instruction text
+                const baseText = "click on Darth Plat";
+                const exploreBaseText = "tap on the screen to explore";
+
+                // Calculate fixed left position using the longer text
+                const tempText = this.add.text(0, 0, exploreBaseText, {
+                    fontFamily: 'Comic Sans MS',
+                    fontSize: '18px'
+                });
+                const exploreX = this.baseWidth/2 - tempText.width/2 + 15; 
+                const baseTextX = exploreX + 25; 
+                tempText.destroy();
+
+                const instructionText = this.add.text(baseTextX, 300, baseText, {
+                    fontFamily: 'Comic Sans MS',
+                    fontSize: '18px',
+                    color: '#ffffff'
+                });
+                instructionText.setOrigin(0, 0.5);
+                instructionText.setDepth(96);
+
+                const exploreText = this.add.text(exploreX, 300, exploreBaseText, {
+                    fontFamily: 'Comic Sans MS',
+                    fontSize: '18px',
+                    color: '#ffffff'
+                });
+                exploreText.setOrigin(0, 0.5);
+                exploreText.setDepth(96);
+                exploreText.setAlpha(0);
+
+                // Animate dots
+                let dots = 0;
+                const animateDots = (text, baseTextContent) => {
+                    text.setText(baseTextContent + '.'.repeat(dots));
+                };
+
+                this.time.addEvent({
+                    delay: 500,
+                    callback: () => {
+                        dots = (dots + 1) % 4;
+                        // Animate both texts (one will be invisible)
+                        animateDots(instructionText, baseText);
+                        animateDots(exploreText, exploreBaseText);
+                    },
+                    loop: true
+                });
+
+                // Create Plat but keep invisible and off-screen initially
+                const plat = this.add.sprite(this.baseWidth/2, -50, 'plat_idle');
                 plat.setOrigin(0.5, 0.5);
-                plat.setScale(0.5); // Reduced by 60% from 0.3
-                plat.play('plat_idle');
-                plat.setDepth(1); // Place it above the background but below other elements
-                
-                // Make book interactive
+                plat.setScale(0.5);
+                plat.setAlpha(0);
+                plat.setDepth(100);
+                plat.setFlipX(true); // Initialize facing left
+
+                // Store the center position and base scale for reference
+                const centerX = this.baseWidth/2;
+                const centerY = 220;
+                const baseScale = 0.5;
+                const maxScaleIncrease = 2; // Maximum scale increase when moving down
+                const maxScaleDecrease = 0.3; // Maximum scale decrease when moving up
+
+                // Function to update Plat's scale based on vertical position
+                const updatePlatScale = (x, y) => {
+                    // Only apply scaling on vertical movement
+                    const verticalDistance = Math.abs(y - centerY);
+                    const maxVerticalDistance = this.baseHeight/2; // Use half screen height as max distance
+                    
+                    // Normalize vertical distance (0 to 1)
+                    const normalizedDistance = Math.min(verticalDistance / maxVerticalDistance, 1);
+                    
+                    // Calculate scale based on direction
+                    if (y < centerY) {
+                        // Moving up - decrease scale
+                        plat.setScale(baseScale * (1 - normalizedDistance * maxScaleDecrease));
+                    } else {
+                        // Moving down - increase scale
+                        plat.setScale(baseScale * (1 + normalizedDistance * maxScaleIncrease));
+                    }
+                };
+
+                // Enable click-to-move after intro
+                let canMove = false;
+                let lastTapTime = 0;
+                let isDoingSpecialMove = false;
+
+                this.input.on('pointerdown', (pointer) => {
+                    if (!canMove) return;
+
+                    const now = Date.now();
+                    const timeSinceLastTap = now - lastTapTime;
+                    console.log('Time since last tap:', timeSinceLastTap);
+
+                    if (timeSinceLastTap < 300 && !isDoingSpecialMove) { // Double tap detected (300ms window)
+                        console.log('Double tap detected! Playing special move...');
+                        isDoingSpecialMove = true;
+                        
+                        // Stop any current movement
+                        this.tweens.killTweensOf(plat);
+                        
+                        // Play double tap animation
+                        plat.play('plat_double_tap');
+                        plat.once('animationcomplete', () => {
+                            console.log('Special move complete, returning to idle');
+                            plat.play('plat_idle');
+                            isDoingSpecialMove = false;
+                        });
+                        lastTapTime = 0; // Reset to prevent triple-tap
+                    } else {
+                        lastTapTime = now;
+                        
+                        if (!isDoingSpecialMove) { // Only allow movement if not doing special move
+                            // Calculate the distance and duration for the movement
+                            const distance = Phaser.Math.Distance.Between(plat.x, plat.y, pointer.x, pointer.y);
+                            const duration = distance * 5; // Adjust speed by changing this multiplier
+
+                            // Determine direction and set sprite orientation
+                            const deltaX = Math.abs(pointer.x - plat.x);
+                            const deltaY = Math.abs(pointer.y - plat.y);
+                            const isVertical = deltaY > deltaX;
+
+                            let animationKey = 'plat_idle'; // fallback
+
+                            if (isVertical) {
+                                if (pointer.y > plat.y) {
+                                    animationKey = 'plat_walk_down';
+                                } else {
+                                    animationKey = 'plat_walk_up';
+                                }
+                            } else {
+                                if (pointer.x > plat.x) {
+                                    animationKey = 'plat_walk_right';
+                                    plat.setFlipX(true); // Face left when moving right
+                                } else {
+                                    animationKey = 'plat_walk_right'; // Use same animation but flip
+                                    plat.setFlipX(false); // Face right when moving left
+                                }
+                            }
+
+                            // Play appropriate animation
+                            plat.play(animationKey, true);
+
+                            // Move to clicked position with scale updates
+                            this.tweens.add({
+                                targets: plat,
+                                x: pointer.x,
+                                y: pointer.y,
+                                duration: duration,
+                                ease: 'Linear',
+                                onUpdate: () => {
+                                    updatePlatScale(plat.x, plat.y);
+                                },
+                                onComplete: () => {
+                                    if (!isDoingSpecialMove) { // Only return to idle if not doing special move
+                                        plat.play('plat_idle');
+                                    }
+                                }
+                            });
+                        }
+                    }
+                });
+
+                // Add hover effects for book
                 book.setInteractive();
-                
-                // Add hover effects
+                let hasTriggeredIntro = false;
+
                 book.on('pointerover', () => {
-                    // Move book up
                     this.tweens.add({
                         targets: book,
-                        y: 190, // Move up 50 pixels
+                        y: 190,
                         duration: 300,
                         ease: 'Power2'
                     });
-                    
-                    // Fade in circle_high
                     this.tweens.add({
                         targets: circleHigh,
                         alpha: 1,
@@ -225,15 +460,12 @@
                 });
                 
                 book.on('pointerout', () => {
-                    // Move book down
                     this.tweens.add({
                         targets: book,
-                        y: 210, // Return to original position
+                        y: 210,
                         duration: 300,
                         ease: 'Power2'
                     });
-                    
-                    // Fade out circle_high
                     this.tweens.add({
                         targets: circleHigh,
                         alpha: 0,
@@ -242,39 +474,177 @@
                     });
                 });
 
-                // Add click effect
+                // Add click effect with intro sequence
                 book.on('pointerdown', () => {
-                    // Create explosion sprite animation
-                    const rectWidth = 700;
-                    const rectX = this.baseWidth/2 - rectWidth/2;
-                    const rectY = 0;
-                    const rectHeight = 290;
-                    
-                    const explosion = this.add.sprite(rectX + rectWidth/2, rectY + 130, 'explosion');
-                    explosion.setScale(1.1);  // Adjust scale to match the space
-                    explosion.setDepth(10000); // Above the blue box
-                    explosion.play('explode');
-                    
-                    // Destroy the explosion sprite when animation completes
-                    explosion.once('animationcomplete', () => {
-                        explosion.destroy();
+                    if (hasTriggeredIntro) {
+                        // Fade out explore text first
+                        this.tweens.add({
+                            targets: exploreText,
+                            alpha: 0,
+                            duration: 500,
+                            ease: 'Power2'
+                        });
+
+                        // Play magic sound
+                        this.sound.play('magicIntro');
+
+                        // Disable movement while transitioning
+                        canMove = false;
+
+                        // Walk back to starting position
+                        const distance = Phaser.Math.Distance.Between(plat.x, plat.y, centerX, centerY);
+                        const duration = distance * 5;
+
+                        plat.play('plat_walk');
+                        this.tweens.add({
+                            targets: plat,
+                            x: centerX,
+                            y: centerY,
+                            scale: baseScale,
+                            duration: duration,
+                            ease: 'Linear',
+                            onComplete: () => {
+                                plat.play('plat_idle');
+                                
+                                // Dim the background
+                                this.tweens.add({
+                                    targets: darkOverlay,
+                                    alpha: 0.5,
+                                    duration: 500,
+                                    ease: 'Power2',
+                                    onComplete: () => {
+                                        // Create explosion
+                                        const explosion = this.add.sprite(centerX, 130, 'explosion');
+                                        explosion.setScale(1.1);
+                                        explosion.setDepth(99);
+                                        explosion.play('explode');
+
+                                        // Play takeoff animation before floating up
+                                        plat.play('plat_takeoff');
+                                        this.time.delayedCall(400, () => {
+                                            plat.play('plat_float');
+                                            // Float back up
+                                            this.tweens.add({
+                                                targets: plat,
+                                                y: -50,
+                                                scale: baseScale,
+                                                duration: 2000,
+                                                ease: 'Power2',
+                                                onComplete: () => {
+                                                    plat.alpha = 1;
+                                                }
+                                            });
+                                        });
+
+                                        explosion.once('animationcomplete', () => {
+                                            explosion.destroy();
+                                            // Fade background back in
+                                            this.tweens.add({
+                                                targets: darkOverlay,
+                                                alpha: 0,
+                                                duration: 500,
+                                                ease: 'Power2',
+                                                onComplete: () => {
+                                                    hasTriggeredIntro = false;
+                                                }
+                                            });
+                                        });
+                                    }
+                                });
+                            }
+                        });
+                        return;
+                    }
+
+                    hasTriggeredIntro = true;
+
+                    // Play magic sound
+                    this.sound.play('magicIntro');
+
+                    // Fade out instruction text first
+                    this.tweens.add({
+                        targets: instructionText,
+                        alpha: 0,
+                        duration: 500,
+                        ease: 'Power2',
+                        onComplete: () => {
+                            // Dim the background
+                            this.tweens.add({
+                                targets: darkOverlay,
+                                alpha: 0.5,
+                                duration: 500,
+                                ease: 'Power2',
+                                onComplete: () => {
+                                    // Create explosion after background dims
+                                    const explosion = this.add.sprite(centerX, 130, 'explosion');
+                                    explosion.setScale(1.1);
+                                    explosion.setDepth(99);
+                                    explosion.play('explode');
+                                    
+                                    // Start fading in Plat when explosion starts
+                                    this.tweens.add({
+                                        targets: plat,
+                                        alpha: 1,
+                                        scale: baseScale,
+                                        duration: 500,
+                                        ease: 'Power2',
+                                        onComplete: () => {
+                                            // Start floating animation
+                                            plat.play('plat_float');
+                                            
+                                            // Float down from top
+                                            this.tweens.add({
+                                                targets: plat,
+                                                y: 180,
+                                                scale: baseScale,
+                                                duration: 2000,
+                                                ease: 'Power2',
+                                                onComplete: () => {
+                                                    // Play landing animation
+                                                    plat.play('plat_land');
+                                                    
+                                                    // Move to final position
+                                                    this.tweens.add({
+                                                        targets: plat,
+                                                        y: centerY,
+                                                        scale: baseScale,
+                                                        duration: 500,
+                                                        ease: 'Power2',
+                                                        onComplete: () => {
+                                                            plat.play('plat_idle');
+                                                            // Shake camera when character fully appears
+                                                            this.cameras.main.shake(500, 0.005);
+                                                            // Enable movement after character appears
+                                                            canMove = true;
+                                                            // Show explore text
+                                                            this.tweens.add({
+                                                                targets: exploreText,
+                                                                alpha: 1,
+                                                                duration: 500,
+                                                                ease: 'Power2'
+                                                            });
+                                                        }
+                                                    });
+                                                }
+                                            });
+                                        }
+                                    });
+
+                                    explosion.once('animationcomplete', () => {
+                                        explosion.destroy();
+                                        // Fade background back in after explosion
+                                        this.tweens.add({
+                                            targets: darkOverlay,
+                                            alpha: 0,
+                                            duration: 500,
+                                            ease: 'Power2'
+                                        });
+                                    });
+                                }
+                            });
+                        }
                     });
                 });
-
-                // Add blue rectangle overlay
-                const overlay = this.add.graphics();
-                overlay.setDepth(9999); // Ensure it's on top of everything
-                
-                // Fill style
-                overlay.fillStyle(0x0000ff, 0); // Blue color with full opacity
-                
-                // Draw rectangle (x, y, width, height)
-                const rectWidth = 700;
-                const rectHeight = 290;
-                const rectX = this.baseWidth/2 - rectWidth/2;
-                const rectY = 0;
-                overlay.fillRect(rectX, rectY, rectWidth, rectHeight);
-
                 // Handle resize events
                 this.scale.on('resize', this.resize, this);
             }
