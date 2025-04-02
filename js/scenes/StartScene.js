@@ -15,14 +15,6 @@ export default class StartScene extends Phaser.Scene {
             this.load.image('circle_high', 'assets/images/circle_high.png');
             this.load.image('fence', 'assets/images/fence.png');
             
-            // Load explosion spritesheet with optimized dimensions
-            this.load.spritesheet('explosion_sprite', 'assets/images/explosion_sprite.png', {
-                frameWidth: 2132,
-                frameHeight: 1200,
-                startFrame: 0,
-                endFrame: 37
-            });
-
             // Load Collasus spritesheet
             this.load.spritesheet('collasus', 'assets/images/collasus.png', {
                 frameWidth: 1123,
@@ -31,10 +23,17 @@ export default class StartScene extends Phaser.Scene {
 
             // Handle load complete
             this.load.on('complete', () => {
+                console.log('All assets loaded successfully');
                 this.assetsLoaded = true;
             });
+
+            // Handle load error
+            this.load.on('loaderror', (file) => {
+                console.error('Error loading asset:', file.src);
+            });
+
         } catch (error) {
-            // Silently handle preload errors
+            console.error('Error in preload:', error);
             this.assetsLoaded = false;
         }
     }
@@ -79,6 +78,20 @@ export default class StartScene extends Phaser.Scene {
             logo.setOrigin(0.5, 0);
             logo.setDepth(3);
 
+            // Add blue rectangle overlay
+            const overlay = this.add.graphics();
+            overlay.setDepth(9999); // Ensure it's on top of everything
+            
+            // Fill style
+            overlay.fillStyle(0x0000ff, 1); // Blue color with full opacity
+            
+            // Draw rectangle (x, y, width, height)
+            const rectWidth = 1400;
+            const rectHeight = 290;
+            const rectX = width/2 - rectWidth/2;
+            const rectY = 0;
+            overlay.fillRect(rectX, rectY, rectWidth, rectHeight);
+
             // Calculate logo scale based on viewport width
             const updateLogoScale = () => {
                 const viewportWidth = window.innerWidth;
@@ -122,39 +135,11 @@ export default class StartScene extends Phaser.Scene {
             // Make book interactive
             book.setInteractive({ useHandCursor: true });
 
-            // Create explosion container (highest z-index)
-            const containerWidth = 700;
-            const containerHeight = Math.round(containerWidth * (1200/2132));  // Scale height proportionally
-            const explosionContainer = this.add.container(width/2, height * 0.3 - 25);
-            explosionContainer.setDepth(999);
-            
-            // Add explosion sprite animation
-            const explosion = this.add.sprite(0, 0, 'explosion_sprite');
-            explosion.setOrigin(0.5, 0.5);
-            const explosionScale = containerWidth / 2132;
-            explosion.setScale(explosionScale);
-            explosionContainer.add(explosion);
-
-            // Create explosion animation but don't play it yet
-            this.anims.create({
-                key: 'explode',
-                frames: this.anims.generateFrameNumbers('explosion_sprite', { 
-                    start: 0,
-                    end: 37
-                }),
-                frameRate: 24,
-                repeat: 0, // Play only once when triggered
-                repeatDelay: 0
-            });
-
-            // Initially hide the explosion
-            explosion.setVisible(false);
-
-            // Create dramatic appearance effect
+            // Function to make Collasus appear dramatically
             const dramaticAppearance = () => {
                 // Start with a quick flash
                 this.cameras.main.flash(300, 255, 255, 255, true);
-                
+
                 // Make Collasus visible but transparent
                 collasus.setVisible(true);
                 collasus.setAlpha(0);
@@ -164,7 +149,7 @@ export default class StartScene extends Phaser.Scene {
                 const flickerCount = 6;
                 const flickerDuration = 100;
                 const finalAlpha = 1;
-                
+
                 for (let i = 0; i < flickerCount; i++) {
                     // Show
                     this.tweens.add({
@@ -174,7 +159,7 @@ export default class StartScene extends Phaser.Scene {
                         ease: 'Power2',
                         delay: i * flickerDuration * 2
                     });
-                    
+
                     // Hide
                     this.tweens.add({
                         targets: collasus,
@@ -211,7 +196,7 @@ export default class StartScene extends Phaser.Scene {
                             const maxY = platform.y + platform.displayHeight/2; // Bottom boundary
                             const minY = platform.y + platform.displayHeight/2 - 100; // Top boundary
                             const spawnY = height/2 - 20; // Where he first appears
-                            
+
                             let targetScale;
                             if (targetY > spawnY) {
                                 // Below spawn point - grow up to 20%
@@ -242,138 +227,14 @@ export default class StartScene extends Phaser.Scene {
                 });
             };
 
-            // Function to play explosion animation
-            const playExplosion = () => {
-                explosion.setVisible(true);
-                explosion.play('explode');
-
-                // Immediately fade out text completely
-                this.tweens.add({
-                    targets: instructionText,
-                    alpha: 0,
-                    duration: 300,
-                    ease: 'Power2'
-                });
-
-                // Create a group of background items to fade (excluding text)
-                const fadeItems = [logo, platform, book, bookGlow, bookContainer, bg];
-                
-                // Fade out background items
-                fadeItems.forEach(item => {
-                    if (item) {
-                        this.tweens.add({
-                            targets: item,
-                            alpha: 0.5,
-                            duration: 300,
-                            ease: 'Power2'
-                        });
-                    }
-                });
-                
-                if (!collasus.visible) {
-                    // Start the dramatic appearance near the end of explosion animation
-                    this.time.delayedCall(800, () => {
-                        dramaticAppearance();
-                        
-                        // Calculate total animation time for Collasus
-                        const flickerCount = 6;
-                        const flickerDuration = 100;
-                        const finalAnimationDelay = flickerCount * flickerDuration * 2;
-                        const shakeTime = 500;
-                        const totalAnimTime = finalAnimationDelay + shakeTime + 200; // Added buffer
-
-                        // Fade items back in after Collasus is fully animated
-                        this.time.delayedCall(totalAnimTime, () => {
-                            fadeItems.forEach(item => {
-                                if (item) {
-                                    this.tweens.add({
-                                        targets: item,
-                                        alpha: 1,
-                                        duration: 500,
-                                        ease: 'Power2'
-                                    });
-                                }
-                            });
-                            
-                            // Update text content before fading back in
-                            updateInstructionText();
-                            // Fade in text
-                            this.tweens.add({
-                                targets: instructionText,
-                                alpha: 1,
-                                duration: 500,
-                                ease: 'Power2'
-                            });
-                        });
-                    });
-                } else {
-                    // If Collasus is visible, make him walk to center and disappear
-                    const distance = Phaser.Math.Distance.Between(collasus.x, collasus.y, width/2, height/2 - 20);
-                    const duration = distance * 2;
-
-                    // Disable click-to-move while returning to center
-                    this.input.off('pointerdown');
-
-                    // Walk to center
-                    collasus.play('walk');
-                    collasus.setFlipX((width/2) > collasus.x);
-
-                    this.tweens.add({
-                        targets: collasus,
-                        x: width/2,
-                        y: height/2 - 20,
-                        duration: duration,
-                        ease: 'Linear',
-                        onComplete: () => {
-                            collasus.play('idle');
-                            
-                            // Fade out effect
-                            this.tweens.add({
-                                targets: collasus,
-                                alpha: 0,
-                                duration: 300,
-                                ease: 'Power2',
-                                onComplete: () => {
-                                    collasus.setVisible(false);
-                                    // Add a flash effect as character disappears
-                                    this.cameras.main.flash(300, 255, 255, 255, true);
-                                    
-                                    // Update and fade in text with background items
-                                    fadeItems.forEach(item => {
-                                        if (item) {
-                                            this.tweens.add({
-                                                targets: item,
-                                                alpha: 1,
-                                                duration: 500,
-                                                ease: 'Power2'
-                                            });
-                                        }
-                                    });
-                                    
-                                    // Update text content before fading back in
-                                    updateInstructionText();
-                                    // Fade in text
-                                    this.tweens.add({
-                                        targets: instructionText,
-                                        alpha: 1,
-                                        duration: 500,
-                                        ease: 'Power2'
-                                    });
-                                }
-                            });
-                        }
-                    });
-                }
-            };
-
-            // Reset function when animation completes
-            explosion.on('animationcomplete', () => {
-                explosion.setVisible(false);
+            // Add click handlers for both platform and book
+            platform.on('pointerdown', () => {
+                dramaticAppearance();
             });
 
-            // Add click handlers for both platform and book
-            platform.on('pointerdown', playExplosion);
-            book.on('pointerdown', playExplosion);
+            book.on('pointerdown', () => {
+                dramaticAppearance();
+            });
 
             // Add Collasus character (initially hidden)
             const collasus = this.add.sprite(width/2, height/2 - 20, 'collasus');
@@ -513,9 +374,6 @@ export default class StartScene extends Phaser.Scene {
                 logo.setPosition(width/2, height * 0.1);
                 updateLogoScale();
 
-                // Update explosion container
-                explosionContainer.setPosition(width/2, height * 0.3 - 25); // Keep -25px offset in resize handler
-
                 // Update platform
                 platform.setPosition(width/2, height/2 - 10);
 
@@ -530,6 +388,7 @@ export default class StartScene extends Phaser.Scene {
                 const currentText = instructionText.text.replace(/\.+$/, ''); // Remove dots for calculation
                 instructionText.x = width/2 + calculateTextOffset(currentText);
             });
+
         } catch (error) {
             // Silently handle create errors
         }

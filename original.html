@@ -107,6 +107,10 @@
                 this.load.image('book', 'assets/images/bloodmoon_faction.png');
                 this.load.image('circle', 'assets/images/circle_low.png');
                 this.load.image('circle_high', 'assets/images/circle_high.png');
+                this.load.spritesheet('explosion', 'assets/images/explosion_sprite.png', {
+                    frameWidth: 2132,
+                    frameHeight: 1200
+                });
             }
 
             create() {
@@ -142,12 +146,23 @@
                 // Add centered platform with reduced scale
                 const platform = this.add.sprite(this.baseWidth/2, 200, 'platform');
                 platform.setOrigin(0.5, 0.5);
-                platform.setScale(0.35);
+                platform.setScale(0.45);
                 
                 // Place book above platform
                 const book = this.add.sprite(this.baseWidth/2, 230, 'book');
                 book.setOrigin(0.5, 0.5);
                 book.setScale(0.35);
+                
+                // Create explosion animation
+                this.anims.create({
+                    key: 'explode',
+                    frames: this.anims.generateFrameNumbers('explosion', { 
+                        start: 0,
+                        end: 37
+                    }),
+                    frameRate: 30,
+                    repeat: 0  // Play only once
+                });
                 
                 // Make book interactive
                 book.setInteractive();
@@ -188,6 +203,40 @@
                         ease: 'Power2'
                     });
                 });
+
+                // Add click effect
+                book.on('pointerdown', () => {
+                    // Create explosion sprite animation
+                    const rectWidth = 700;
+                    const explosionScale = rectWidth / 2132; // Scale to fit 700px width
+                    const rectX = this.baseWidth/2 - rectWidth/2;
+                    const rectY = 0;
+                    const rectHeight = 290;
+                    
+                    const explosion = this.add.sprite(rectX + rectWidth/2, rectY + rectHeight/2 - 40, 'explosion');
+                    explosion.setScale(explosionScale);
+                    explosion.setDepth(10000); // Above the blue box
+                    explosion.play('explode');
+                    
+                    // Destroy the explosion sprite when animation completes
+                    explosion.once('animationcomplete', () => {
+                        explosion.destroy();
+                    });
+                });
+
+                // Add blue rectangle overlay
+                const overlay = this.add.graphics();
+                overlay.setDepth(9999); // Ensure it's on top of everything
+                
+                // Fill style
+                overlay.fillStyle(0x0000ff, 0); // Blue color with full opacity
+                
+                // Draw rectangle (x, y, width, height)
+                const rectWidth = 700;
+                const rectHeight = 290;
+                const rectX = this.baseWidth/2 - rectWidth/2;
+                const rectY = 0;
+                overlay.fillRect(rectX, rectY, rectWidth, rectHeight);
 
                 // Handle resize events
                 this.scale.on('resize', this.resize, this);
