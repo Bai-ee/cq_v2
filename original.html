@@ -12,27 +12,38 @@
             padding: 0;
             width: 100%;
             height: 100%;
-            overflow-x: auto;
             background: #19500A;
         }
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: auto;
+        }
+        .content-wrapper {
+            width: 2200px;
+            position: relative;
+            flex-shrink: 0;
+        }
         #game-container {
-            width: 1400px !important;
+            width: 100% !important;
             height: 400px !important;
-            margin: 0 auto;
             position: relative;
             background: #000;
         }
         #game-container canvas {
-            width: 1400px !important;
+            width: 100% !important;
             height: 400px !important;
         }
         .fence {
             position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            z-index: 1;
+            top: 100%;
+            width: auto;
+            height: auto;
+            max-width: 1400px;
             pointer-events: none;
+            z-index: 9999;
+            margin-top: -70px;
         }
         #debug-button {
             position: fixed;
@@ -67,8 +78,10 @@
 </head>
 <body>
     <div id="error-display"></div>
-    <div id="game-container">
-        <img src="assets/images/fence.png" alt="fence" class="fence">
+    <div class="content-wrapper">
+        <div id="game-container">
+            <img src="assets/images/fence.png" alt="fence" class="fence">
+        </div>
     </div>
     <a href="./index.html" id="debug-button">Switch to Debug Mode</a>
     
@@ -84,7 +97,6 @@
         class GameScene extends Phaser.Scene {
             constructor() {
                 super({ key: 'GameScene' });
-                this.baseWidth = 1400;
                 this.baseHeight = 400;
             }
 
@@ -96,6 +108,9 @@
             }
 
             create() {
+                // Get current game width
+                this.baseWidth = this.game.scale.width;
+                
                 // Add background centered in stage
                 const bg = this.add.sprite(this.baseWidth/2, this.baseHeight/2, 'background');
                 bg.setOrigin(0.5, 0.5);
@@ -111,13 +126,30 @@
                 logo.setOrigin(0.5, 0.5);
                 logo.setScale(0.5);
                 
-                // Add platform near the bottom
-                const platform = this.add.sprite(this.baseWidth/2, this.baseHeight - 50, 'platform');
+                // Add centered platform with reduced scale
+                const platform = this.add.sprite(this.baseWidth/2, 200, 'platform');
                 platform.setOrigin(0.5, 0.5);
+                platform.setScale(0.35);
                 
-                // Add book in the middle
-                const book = this.add.sprite(this.baseWidth/2, this.baseHeight/2, 'book');
+                // Place book above platform
+                const book = this.add.sprite(this.baseWidth/2, 225, 'book');
                 book.setOrigin(0.5, 0.5);
+                book.setScale(0.35);
+
+                // Handle resize events
+                this.scale.on('resize', this.resize, this);
+            }
+
+            resize(gameSize) {
+                // Update baseWidth on resize
+                this.baseWidth = gameSize.width;
+                
+                // Recenter all sprites
+                this.children.list.forEach(child => {
+                    if (child.type === 'Sprite') {
+                        child.x = this.baseWidth/2;
+                    }
+                });
             }
         }
 
@@ -125,8 +157,8 @@
             type: Phaser.AUTO,
             parent: 'game-container',
             scale: {
-                mode: Phaser.Scale.NONE,
-                width: 1400,
+                mode: Phaser.Scale.RESIZE,
+                width: '100%',
                 height: 400,
                 autoRound: true
             },
