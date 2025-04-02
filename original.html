@@ -118,8 +118,10 @@
                 this.load.image('circle', 'assets/images/circle_low.png');
                 this.load.image('circle_high', 'assets/images/circle_high.png');
                 this.load.spritesheet('plat_idle', 'assets/images/Plat_spritesheet.png', {
-                    frameWidth: 1095,
-                    frameHeight: 1095
+                    frameWidth: 200,     // Width of each frame
+                    frameHeight: 200,    // Height of each frame
+                    // Full spritesheet size: 1800x1404 pixels
+                    // 9 frames wide (1800/200), 7 frames tall (1404/200)
                 });
             }
 
@@ -186,9 +188,9 @@
                 });
                 
                 // Create and play the plat animation
-                const plat = this.add.sprite(this.baseWidth/2, platform.y + 40, 'plat_idle');
+                const plat = this.add.sprite(this.baseWidth/2, 220, 'plat_idle');
                 plat.setOrigin(0.5, 0.5);
-                plat.setScale(0.08); // Reduced by 60% from 0.3
+                plat.setScale(0.5); // Reduced by 60% from 0.3
                 plat.play('plat_idle');
                 plat.setDepth(1); // Place it above the background but below other elements
                 
