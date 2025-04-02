@@ -117,10 +117,10 @@
                 this.load.image('book', 'assets/images/bloodmoon_faction.png');
                 this.load.image('circle', 'assets/images/circle_low.png');
                 this.load.image('circle_high', 'assets/images/circle_high.png');
-                // this.load.spritesheet('explosion', 'assets/images/explosion_sprite.png', {
-                //     frameWidth: 2132,
-                //     frameHeight: 1200
-                // });
+                this.load.spritesheet('plat_idle', 'assets/images/Plat_spritesheet.png', {
+                    frameWidth: 1095,
+                    frameHeight: 1095
+                });
             }
 
             create() {
@@ -173,6 +173,24 @@
                 //     frameRate: 30,
                 //     repeat: 0  // Play only once
                 // });
+                
+                // Create plat animation
+                this.anims.create({
+                    key: 'plat_idle',
+                    frames: this.anims.generateFrameNumbers('plat_idle', { 
+                        start: 19,
+                        end: 25
+                    }),
+                    frameRate: 12,
+                    repeat: -1  // Loop continuously
+                });
+                
+                // Create and play the plat animation
+                const plat = this.add.sprite(this.baseWidth/2, platform.y + 40, 'plat_idle');
+                plat.setOrigin(0.5, 0.5);
+                plat.setScale(0.08); // Reduced by 60% from 0.3
+                plat.play('plat_idle');
+                plat.setDepth(1); // Place it above the background but below other elements
                 
                 // Make book interactive
                 book.setInteractive();
