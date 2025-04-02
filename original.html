@@ -105,6 +105,8 @@
                 this.load.image('background', 'assets/images/bg.jpg');
                 this.load.image('platform', 'assets/images/bloodmoon_plat.png');
                 this.load.image('book', 'assets/images/bloodmoon_faction.png');
+                this.load.image('circle', 'assets/images/circle_low.png');
+                this.load.image('circle_high', 'assets/images/circle_high.png');
             }
 
             create() {
@@ -121,6 +123,17 @@
                 const scale = Math.max(bgScaleX, bgScaleY);
                 bg.setScale(scale);
                 
+                // Add circle on top of background
+                const circle = this.add.sprite(this.baseWidth/2, this.baseHeight/2, 'circle');
+                circle.setOrigin(0.5, 0.5);
+                circle.setScale(scale);
+                
+                // Add high circle (initially invisible)
+                const circleHigh = this.add.sprite(this.baseWidth/2, this.baseHeight/2, 'circle_high');
+                circleHigh.setOrigin(0.5, 0.5);
+                circleHigh.setScale(scale);
+                circleHigh.setAlpha(0);
+                
                 // Add logo
                 const logo = this.add.sprite(this.baseWidth/2, 100, 'logo');
                 logo.setOrigin(0.5, 0.5);
@@ -132,9 +145,49 @@
                 platform.setScale(0.35);
                 
                 // Place book above platform
-                const book = this.add.sprite(this.baseWidth/2, 225, 'book');
+                const book = this.add.sprite(this.baseWidth/2, 230, 'book');
                 book.setOrigin(0.5, 0.5);
                 book.setScale(0.35);
+                
+                // Make book interactive
+                book.setInteractive();
+                
+                // Add hover effects
+                book.on('pointerover', () => {
+                    // Move book up
+                    this.tweens.add({
+                        targets: book,
+                        y: 210, // Move up 50 pixels
+                        duration: 300,
+                        ease: 'Power2'
+                    });
+                    
+                    // Fade in circle_high
+                    this.tweens.add({
+                        targets: circleHigh,
+                        alpha: 1,
+                        duration: 300,
+                        ease: 'Power2'
+                    });
+                });
+                
+                book.on('pointerout', () => {
+                    // Move book down
+                    this.tweens.add({
+                        targets: book,
+                        y: 230, // Return to original position
+                        duration: 300,
+                        ease: 'Power2'
+                    });
+                    
+                    // Fade out circle_high
+                    this.tweens.add({
+                        targets: circleHigh,
+                        alpha: 0,
+                        duration: 300,
+                        ease: 'Power2'
+                    });
+                });
 
                 // Handle resize events
                 this.scale.on('resize', this.resize, this);
