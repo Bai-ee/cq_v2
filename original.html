@@ -123,6 +123,13 @@
                     // Full spritesheet size: 1800x1404 pixels
                     // 9 frames wide (1800/200), 7 frames tall (1404/200)
                 });
+                this.load.spritesheet('explosion', 'assets/images/explosion_sprite_small.png', {
+                    frameWidth: 432,     // Width of each frame
+                    frameHeight: 243,    // Height of each frame
+                    // Full spritesheet size: 2158x1944 pixels
+                    // 5 frames wide (2158/432), 8 frames tall (1944/243)
+                    endFrame: 37         // Total frames: 38 (0-37)
+                });
             }
 
             create() {
@@ -166,15 +173,16 @@
                 book.setScale(0.35);
                 
                 // Create explosion animation
-                // this.anims.create({
-                //     key: 'explode',
-                //     frames: this.anims.generateFrameNumbers('explosion', { 
-                //         start: 0,
-                //         end: 37
-                //     }),
-                //     frameRate: 30,
-                //     repeat: 0  // Play only once
-                // });
+                this.anims.create({
+                    key: 'explode',
+                    frames: this.anims.generateFrameNumbers('explosion', { 
+                        start: 0,
+                        end: 37,
+                        first: 0
+                    }),
+                    frameRate: 24,
+                    repeat: 0  // Play only once
+                });
                 
                 // Create plat animation
                 this.anims.create({
@@ -236,22 +244,21 @@
 
                 // Add click effect
                 book.on('pointerdown', () => {
-                    // // Create explosion sprite animation
-                    // const rectWidth = 700;
-                    // const explosionScale = rectWidth / 2132; // Scale to fit 700px width
-                    // const rectX = this.baseWidth/2 - rectWidth/2;
-                    // const rectY = 0;
-                    // const rectHeight = 290;
+                    // Create explosion sprite animation
+                    const rectWidth = 700;
+                    const rectX = this.baseWidth/2 - rectWidth/2;
+                    const rectY = 0;
+                    const rectHeight = 290;
                     
-                    // const explosion = this.add.sprite(rectX + rectWidth/2, rectY + rectHeight/2 - 40, 'explosion');
-                    // explosion.setScale(explosionScale);
-                    // explosion.setDepth(10000); // Above the blue box
-                    // explosion.play('explode');
+                    const explosion = this.add.sprite(rectX + rectWidth/2, rectY + 130, 'explosion');
+                    explosion.setScale(1.1);  // Adjust scale to match the space
+                    explosion.setDepth(10000); // Above the blue box
+                    explosion.play('explode');
                     
-                    // // Destroy the explosion sprite when animation completes
-                    // explosion.once('animationcomplete', () => {
-                    //     explosion.destroy();
-                    // });
+                    // Destroy the explosion sprite when animation completes
+                    explosion.once('animationcomplete', () => {
+                        explosion.destroy();
+                    });
                 });
 
                 // Add blue rectangle overlay
