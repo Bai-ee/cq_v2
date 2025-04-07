@@ -120,8 +120,8 @@
                 this.load.spritesheet('plat_idle', 'assets/images/Plat_spritesheet.png', {
                     frameWidth: 200,     // Width of each frame
                     frameHeight: 200,    // Height of each frame
-                    // Full spritesheet size: 1800x1404 pixels
-                    // 9 frames wide (1800/200), 7 frames tall (1404/200)
+                    // Full spritesheet size: 1800x2604 pixels
+                    // 9 frames wide (1800/200), 13 frames tall (2604/200)
                 });
                 this.load.spritesheet('explosion', 'assets/images/explosion_sprite_small.png', {
                     frameWidth: 432,     // Width of each frame
@@ -178,18 +178,49 @@
                 this.anims.create({
                     key: 'plat_idle',
                     frames: this.anims.generateFrameNumbers('plat_idle', { 
-                        start: 19,
-                        end: 25
+                        start: 72,
+                        end: 77
                     }),
-                    frameRate: 12,
+                    frameRate: 8,
                     repeat: -1
                 });
 
                 this.anims.create({
-                    key: 'plat_double_tap',
+                    key: 'plat_head_butt',
                     frames: this.anims.generateFrameNumbers('plat_idle', { 
-                        start: 54,
-                        end: 59
+                        start: 105,
+                        end: 112
+                    }),
+                    frameRate: 12,
+                    repeat: 2  // 3 times total (original + 2 repeats)
+                });
+
+                // Animation removed as requested
+                // this.anims.create({
+                //     key: 'plat_special_action',
+                //     frames: this.anims.generateFrameNumbers('plat_idle', { 
+                //         start: 72,
+                //         end: 84
+                //     }),
+                //     frameRate: 12,
+                //     repeat: 2  // 3 times total (original + 2 repeats)
+                // });
+
+                this.anims.create({
+                    key: 'plat_special_action2',
+                    frames: this.anims.generateFrameNumbers('plat_idle', { 
+                        start: 86,
+                        end: 94
+                    }),
+                    frameRate: 12,
+                    repeat: 2  // 3 times total (original + 2 repeats)
+                });
+
+                this.anims.create({
+                    key: 'plat_special_action3',
+                    frames: this.anims.generateFrameNumbers('plat_idle', { 
+                        start: 97,
+                        end: 102
                     }),
                     frameRate: 12,
                     repeat: 2  // 3 times total (original + 2 repeats)
@@ -200,6 +231,16 @@
                     frames: this.anims.generateFrameNumbers('plat_idle', { 
                         start: 0,
                         end: 12
+                    }),
+                    frameRate: 24,
+                    repeat: -1
+                });
+
+                this.anims.create({
+                    key: 'plat_walk_left',
+                    frames: this.anims.generateFrameNumbers('plat_idle', { 
+                        start: 62,
+                        end: 69
                     }),
                     frameRate: 24,
                     repeat: -1
@@ -281,6 +322,7 @@
                 // Add initial instruction text
                 const baseText = "click on Darth Plat";
                 const exploreBaseText = "tap on the screen to explore";
+                const actionInfoBaseText = "";
 
                 // Calculate fixed left position using the longer text
                 const tempText = this.add.text(0, 0, exploreBaseText, {
@@ -307,6 +349,19 @@
                 exploreText.setOrigin(0, 0.5);
                 exploreText.setDepth(96);
                 exploreText.setAlpha(0);
+                
+                // Add action info text (initially hidden)
+                const actionInfoText = this.add.text(this.baseWidth/2, 350, 'Animation Info', {
+                    fontFamily: 'Comic Sans MS',
+                    fontSize: '16px',
+                    color: '#ffff00',
+                    backgroundColor: '#000000',
+                    padding: { x: 10, y: 5 }
+                });
+                actionInfoText.setOrigin(0.5, 0.5);
+                actionInfoText.setDepth(999); // Ensure it's above everything
+                actionInfoText.setScrollFactor(0); // Fix to camera
+                actionInfoText.setAlpha(1); // Make visible initially to test
 
                 // Animate dots
                 let dots = 0;
@@ -363,6 +418,68 @@
                 let canMove = false;
                 let lastTapTime = 0;
                 let isDoingSpecialMove = false;
+                let currentActionIndex = 0;
+                const specialActions = ['plat_head_butt', 'plat_special_action2', 'plat_special_action3'];
+
+                // Function to update action info text
+                const updateActionInfo = (actionName) => {
+                    // Get frame range for the current action
+                    let frameStart, frameEnd;
+                    switch(actionName) {
+                        case 'plat_head_butt':
+                            frameStart = 105;
+                            frameEnd = 111;
+                            break;
+                        // Removed as requested
+                        // case 'plat_special_action':
+                        //     frameStart = 72;
+                        //     frameEnd = 84;
+                        //     break;
+                        case 'plat_special_action2':
+                            frameStart = 86;
+                            frameEnd = 94;
+                            break;
+                        case 'plat_special_action3':
+                            frameStart = 97;
+                            frameEnd = 102;
+                            break;
+                        case 'plat_walk_left':
+                            frameStart = 62;
+                            frameEnd = 69;
+                            break;
+                        case 'plat_walk_right':
+                            frameStart = 0;
+                            frameEnd = 12;
+                            break;
+                        case 'plat_walk_up':
+                            frameStart = 43;
+                            frameEnd = 51;
+                            break;
+                        case 'plat_walk_down':
+                            frameStart = 33;
+                            frameEnd = 41;
+                            break;
+                        default:
+                            frameStart = 0;
+                            frameEnd = 0;
+                    }
+                    
+                    // Display action info
+                    console.log(`Updating text: Animation: ${actionName} (Frames ${frameStart}-${frameEnd})`);
+                    actionInfoText.setText(`Animation: ${actionName} (Frames ${frameStart}-${frameEnd})`);
+                    actionInfoText.setAlpha(1);
+                    actionInfoText.setVisible(true);
+                    
+                    // Hide action info after 3 seconds
+                    this.time.delayedCall(3000, () => {
+                        this.tweens.add({
+                            targets: actionInfoText,
+                            alpha: 0,
+                            duration: 500,
+                            ease: 'Power2'
+                        });
+                    });
+                };
 
                 this.input.on('pointerdown', (pointer) => {
                     if (!canMove) return;
@@ -371,22 +488,49 @@
                     const timeSinceLastTap = now - lastTapTime;
                     console.log('Time since last tap:', timeSinceLastTap);
 
-                    if (timeSinceLastTap < 300 && !isDoingSpecialMove) { // Double tap detected (300ms window)
-                        console.log('Double tap detected! Playing special move...');
+                    // Check for double tap (less than 300ms between taps)
+                    if (timeSinceLastTap < 300 && !isDoingSpecialMove) {
+                        console.log('Double tap detected! Starting action cycle...');
                         isDoingSpecialMove = true;
                         
                         // Stop any current movement
                         this.tweens.killTweensOf(plat);
                         
-                        // Play double tap animation
-                        plat.play('plat_double_tap');
-                        plat.once('animationcomplete', () => {
-                            console.log('Special move complete, returning to idle');
-                            plat.play('plat_idle');
-                            isDoingSpecialMove = false;
-                        });
-                        lastTapTime = 0; // Reset to prevent triple-tap
+                        // Start with the first action
+                        currentActionIndex = 0;
+                        
+                        // Function to play the next action in sequence
+                        const playNextAction = () => {
+                            if (currentActionIndex >= specialActions.length) {
+                                // We've gone through all actions, return to idle
+                                plat.play('plat_idle');
+                                isDoingSpecialMove = false;
+                                return;
+                            }
+                            
+                            const currentAction = specialActions[currentActionIndex];
+                            console.log('Playing special action:', currentAction);
+                            
+                            // Update action info for special action
+                            updateActionInfo(currentAction);
+                            
+                            // Play the current special action animation
+                            plat.play(currentAction);
+                            
+                            // When this animation completes (after 3 loops), move to the next action
+                            plat.once('animationcomplete', () => {
+                                console.log('Action complete, moving to next');
+                                currentActionIndex++;
+                                playNextAction();
+                            });
+                        };
+                        
+                        // Start the action sequence
+                        playNextAction();
+                        
+                        lastTapTime = 0; // Reset tap time
                     } else {
+                        // Normal single tap - update last tap time for double-tap detection
                         lastTapTime = now;
                         
                         if (!isDoingSpecialMove) { // Only allow movement if not doing special move
@@ -408,17 +552,33 @@
                                     animationKey = 'plat_walk_up';
                                 }
                             } else {
-                                if (pointer.x > plat.x) {
-                                    animationKey = 'plat_walk_right';
-                                    plat.setFlipX(true); // Face left when moving right
-                                } else {
-                                    animationKey = 'plat_walk_right'; // Use same animation but flip
-                                    plat.setFlipX(false); // Face right when moving left
+                                // Check if it's a direct horizontal movement (not diagonal)
+                                const isDirectHorizontal = Math.abs(pointer.y - plat.y) < 30; // Small threshold for vertical difference
+                                
+                                if (pointer.x > plat.x) { // Moving right
+                                    if (isDirectHorizontal) {
+                                        animationKey = 'plat_walk_left'; // Use the left-walking animation
+                                        plat.setFlipX(true); // Flip it to make it look like walking right
+                                    } else {
+                                        animationKey = 'plat_walk_right'; // Use right animation for diagonal
+                                        plat.setFlipX(true); // Face left when moving right
+                                    }
+                                } else { // Moving left
+                                    if (isDirectHorizontal) {
+                                        animationKey = 'plat_walk_left'; // Use the left-walking animation
+                                        plat.setFlipX(false); // No flip needed for dedicated left animation
+                                    } else {
+                                        animationKey = 'plat_walk_right'; // Use right animation for diagonal
+                                        plat.setFlipX(false); // Face right when moving left
+                                    }
                                 }
                             }
 
                             // Play appropriate animation
                             plat.play(animationKey, true);
+                            
+                            // Update action info for movement animation
+                            updateActionInfo(animationKey);
 
                             // Move to clicked position with scale updates
                             this.tweens.add({
